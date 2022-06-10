@@ -5,8 +5,8 @@
 # [Gitee - CalendarView](https://gitee.com/relin/CalendarView)
 # [Github - CalendarView](https://github.com/RelinRan/CalendarView)
 # 预览
-![单选效果](./ic_preview_2.png)  
-![时段选择效果](./ic_preview_1.png)  
+![单选效果](./ic_preview_02.png)  
+![时段选择效果](./ic_preview_01.png)  
 # AAR
 [calendar_view.aar](https://github.com/RelinRan/CalendarView/blob/master/calendar_view.aar)
 # Maven
