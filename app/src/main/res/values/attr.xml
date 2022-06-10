@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CalendarView">
+        <attr name="initYear" format="integer" />
+        <attr name="initMonth" format="integer" />
+        <attr name="initDay" format="integer" />
+        <attr name="isInterval" format="boolean" />
+        <attr name="showToday" format="boolean" />
+        <attr name="weekTextSize" format="dimension|reference" />
+        <attr name="monthDayTextSize" format="dimension|reference" />
+        <attr name="circleRadius" format="dimension|reference" />
+        <attr name="weekTextColor" format="color|reference" />
+        <attr name="lastMonthDayTextColor" format="color|reference" />
+        <attr name="nowMonthDayTextColor" format="color|reference" />
+        <attr name="nextMonthDayTextColor" format="color|reference" />
+        <attr name="nowDayCircleColor" format="color|reference" />
+        <attr name="checkDayCircleColor" format="color|reference" />
+        <attr name="checkDayIntervalColor" format="color|reference" />
+    </declare-styleable>
+</resources>
