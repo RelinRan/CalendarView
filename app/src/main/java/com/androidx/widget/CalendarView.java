@@ -263,7 +263,10 @@ public class CalendarView extends View {
             float cx = unitWidth * position + unitWidth / 2.0F;
             float cy = unitHeight + unitHeight * row + unitHeight / 2.0F;
             //当前天
-            if (showToday && type == Day.NOW_MONTH && day == nowDay) {
+            Calendar calendar = Calendar.getInstance();
+            int nowYear = calendar.get(Calendar.YEAR);
+            int nowMonth = calendar.get(Calendar.MONTH) + 1;
+            if (showToday && type == Day.NOW_MONTH && nowYear == year && nowMonth == month && day == nowDay) {
                 drawDayCircle(canvas, cx, cy, nowDayCircleColor);
                 paint.setColor(Color.WHITE);
             }
