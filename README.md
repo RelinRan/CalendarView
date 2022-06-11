@@ -2,13 +2,15 @@
 自定义日历  
 1.单选  
 2.时间段选择  
-# [Gitee - CalendarView](https://gitee.com/relin/CalendarView)
-# [Github - CalendarView](https://github.com/RelinRan/CalendarView)
 # 预览
 ![单选效果](./ic_preview_02.png)  
 ![时段选择效果](./ic_preview_01.png)  
-# AAR
-[calendar_view.aar](https://github.com/RelinRan/CalendarView/blob/master/calendar_view.aar)
+# 资源
+|名字|资源|
+|-|-|
+|AAR|[calendar_view.aar](https://github.com/RelinRan/CalendarView/blob/master/calendar_view.aar)|
+|Gitee|[CalendarView](https://gitee.com/relin/CalendarView)|
+|GitHub | [CalendarView](https://github.com/RelinRan/CalendarView)|
 # Maven
 1.build.grade | setting.grade
 ```
