@@ -3,8 +3,11 @@
 1.单选  
 2.时间段选择  
 # 预览
+1.单选  
 ![单选效果](./ic_preview_02.png)  
+2.时段效果 - intervalShape=“circle”  
 ![时段选择效果-circle](./ic_preview_01.png)  
+3.时段效果 - (注意：2022.3.30.1版本以前不支持) - intervalShape=“rect”  
 ![时段选择效果-rect](./ic_preview_03.png)  
 # 资源
 |名字|资源|
@@ -32,6 +35,7 @@ dependencies {
     android:id="@+id/calendar"
     android:layout_width="match_parent"
     android:background="@android:color/white"
+    app:intervalShape="rect"
     android:layout_height="320dp"/>
 ```
 # attr.xml
