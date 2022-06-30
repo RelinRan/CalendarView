@@ -4,7 +4,8 @@
 2.时间段选择  
 # 预览
 ![单选效果](./ic_preview_02.png)  
-![时段选择效果](./ic_preview_01.png)  
+![时段选择效果-circle](./ic_preview_01.png)  
+![时段选择效果-rect](./ic_preview_03.png)  
 # 资源
 |名字|资源|
 |-|-|
@@ -22,7 +23,7 @@ repositories {
 2./app/build.grade
 ```
 dependencies {
-	implementation 'com.github.RelinRan:CalendarView:2022.6.11.1'
+	implementation 'com.github.RelinRan:CalendarView:2022.6.30.1'
 }
 ```
 # xml
@@ -50,6 +51,11 @@ dependencies {
 <attr name="nowDayCircleColor" format="color|reference" />
 <attr name="checkDayCircleColor" format="color|reference" />
 <attr name="checkDayIntervalColor" format="color|reference" />
+<attr name="disableTextColor" format="color|reference" />
+<attr name="intervalShape" format="enum">
+    <enum name="circle" value="1"/>
+    <enum name="rect" value="2"/>
+</attr>
 ```
 # 单选
 ```
@@ -59,6 +65,12 @@ CalendarView calendar = findViewById(R.id.calendar);
 calendar.setDate(new Date());
 //单选
 calendar.setInterval(false);
+//选中日期
+calendar.setCheckTime("2022-06-20");
+//设置可选区间
+calendar.setMinTime("2022-06-01");
+calendar.setMaxTime("2022-07-20");
+//选中监听
 calendar.setOnItemClickListener((calendarView, time) -> {
     String date = dateFormat.format(time);
 });
@@ -71,6 +83,13 @@ CalendarView calendar = findViewById(R.id.calendar);
 calendar.setDate(new Date())
 //时段选择
 calendar.setInterval(true);
+//设置选中区间
+calendar.setIntervalStart("2022-06-20");
+calendar.setIntervalEnd("2022-07-05");
+//设置可选区间
+calendar.setMinTime("2022-06-01");
+calendar.setMaxTime("2022-07-20");
+//选择监听
 calendar.setOnIntervalSelectListener((view, start, end) -> {
     String startTime = dateFormat.format(start);
     String endTime = dateFormat.format(end);

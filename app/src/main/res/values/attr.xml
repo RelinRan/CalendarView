@@ -16,5 +16,10 @@
         <attr name="nowDayCircleColor" format="color|reference" />
         <attr name="checkDayCircleColor" format="color|reference" />
         <attr name="checkDayIntervalColor" format="color|reference" />
+        <attr name="disableTextColor" format="color|reference" />
+        <attr name="intervalShape" format="enum">
+            <enum name="circle" value="1"/>
+            <enum name="rect" value="2"/>
+        </attr>
     </declare-styleable>
 </resources>

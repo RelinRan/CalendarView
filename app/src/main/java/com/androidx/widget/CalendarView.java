@@ -33,7 +33,7 @@ public class CalendarView extends View {
     //日
     private int day = 1;
     //是否区间选择
-    private boolean interval = false;
+    private boolean interval = true;
     //是否显示今天
     private boolean showToday = true;
     //星期文字大小
@@ -45,18 +45,30 @@ public class CalendarView extends View {
     //星期文字颜色
     private int weekTextColor = Color.parseColor("#0076F6");
     //上个月天文字颜色
-    private int lastMonthDayTextColor = Color.parseColor("#838383");
+    private int lastMonthDayTextColor = Color.parseColor("#A8A8A8");
     //当前月天文字颜色
     private int nowMonthDayTextColor = Color.parseColor("#333333");
     //下个月天文字颜色
-    private int nextMonthDayTextColor = Color.parseColor("#838383");
+    private int nextMonthDayTextColor = Color.parseColor("#A8A8A8");
     //当天颜色
     private int nowDayCircleColor = Color.parseColor("#EA3B3B");
+    //不可选文字颜色
+    private int disableTextColor = Color.parseColor("#EEEEEE");
     //选中颜色
     private int checkDayCircleColor = Color.parseColor("#1982F3");
     //选中区间颜色
     private int checkDayIntervalColor = Color.parseColor("#E9E7E7");
+    //区间选中显示类型
+    private int intervalShape = 1;
 
+    /**
+     * 图形-圆
+     */
+    public static int SHAPE_CIRCLE = 1;
+    /**
+     * 图形 - 矩形
+     */
+    public static int SHAPE_RECT = 2;
     //单位宽度
     private float unitWidth;
     //单位高度
@@ -69,6 +81,16 @@ public class CalendarView extends View {
     private Day startDay;
     //结束
     private Day endDay;
+    //开始时间
+    private long intervalStart = -1;
+    //结束时间
+    private long intervalEnd = -1;
+    //选中时间
+    private long checkTime = -1;
+    //最大时间
+    private long maxTime = -1;
+    //最小时间
+    private long minTime = -1;
 
     public CalendarView(Context context) {
         super(context);
@@ -104,6 +126,8 @@ public class CalendarView extends View {
             nowDayCircleColor = array.getColor(R.styleable.CalendarView_nowDayCircleColor, nowDayCircleColor);
             checkDayCircleColor = array.getColor(R.styleable.CalendarView_checkDayCircleColor, checkDayCircleColor);
             checkDayIntervalColor = array.getColor(R.styleable.CalendarView_checkDayIntervalColor, checkDayIntervalColor);
+            disableTextColor = array.getColor(R.styleable.CalendarView_disableTextColor, disableTextColor);
+            intervalShape = array.getInt(R.styleable.CalendarView_intervalShape, intervalShape);
             array.recycle();
         }
     }
@@ -111,8 +135,8 @@ public class CalendarView extends View {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        unitWidth = getMeasuredWidth() / getCalendarTitle().length;
-        unitHeight = getMeasuredHeight() / 7;
+        unitWidth = (getMeasuredWidth() - getPaddingLeft() - getPaddingRight()) / getCalendarTitle().length;
+        unitHeight = (getMeasuredHeight() - getPaddingTop() - getPaddingBottom()) / 7;
     }
 
     @Override
@@ -120,30 +144,37 @@ public class CalendarView extends View {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 checkDay = findTouchDay(event.getX(), event.getY());
-                if (checkDay != null) {
+                if (checkDay != null && isEnableSelect(checkDay.getTime())) {
                     //判读是否是区间选择
                     if (interval) {
                         if (endDay != null && startDay != null) {
                             startDay = checkDay;
+                            intervalStart = startDay.getTime();
                             endDay = null;
+                            intervalEnd = -1;
                         } else {
                             if (endDay == null && startDay != null) {
                                 boolean isConversion = startDay.getTime() > checkDay.getTime();
                                 if (isConversion) {
                                     endDay = startDay;
                                     startDay = checkDay;
+                                    intervalStart = startDay.getTime();
+                                    intervalEnd = endDay.getTime();
                                 } else {
                                     endDay = checkDay;
+                                    intervalEnd = endDay.getTime();
                                 }
                             }
                             if (startDay == null) {
                                 startDay = checkDay;
+                                intervalStart = startDay.getTime();
                             }
                         }
                         if (onIntervalSelectListener != null && startDay != null && endDay != null) {
                             onIntervalSelectListener.onCalendarIntervalSelected(this, toDate(startDay.getDay()), toDate(endDay.getDay()));
                         }
                     } else {
+                        checkTime = checkDay.getTime();
                         if (onItemSelectListener != null) {
                             onItemSelectListener.onCalendarItemSelected(this, toDate(checkDay.getDay()));
                         }
@@ -153,6 +184,23 @@ public class CalendarView extends View {
                 break;
         }
         return true;
+    }
+
+    /**
+     * @param time
+     * @return 是否可选时间
+     */
+    private boolean isEnableSelect(long time) {
+        if (minTime == -1 && maxTime == -1) {
+            return true;
+        }
+        if (minTime != -1 && maxTime == -1) {
+            return time >= minTime;
+        }
+        if (minTime == -1 && maxTime != -1) {
+            return time <= maxTime;
+        }
+        return time >= minTime && time <= maxTime;
     }
 
     /**
@@ -215,7 +263,9 @@ public class CalendarView extends View {
             String weekName = weekNames[i];
             Rect bounds = new Rect();
             paint.getTextBounds(weekName, 0, weekName.length(), bounds);
-            canvas.drawText(weekName, unitWidth * i + (unitWidth / 2.0F - bounds.width() / 2.0F), unitHeight / 2.0F, paint);
+            float x = unitWidth * i + (unitWidth / 2.0F - bounds.width() / 2.0F) + getPaddingLeft();
+            float y = unitHeight / 2.0F + getPaddingTop();
+            canvas.drawText(weekName, x, y, paint);
         }
     }
 
@@ -238,35 +288,57 @@ public class CalendarView extends View {
             int position = i % 7;
             int type = days.get(i).getType();
             int day = days.get(i).getDay();
+            String dayText = String.valueOf(days.get(i).getDay());
             if (type == Day.LAST_MONTH) {
-                paint.setColor(lastMonthDayTextColor);
+                days.get(i).setTextColor(lastMonthDayTextColor);
                 days.get(i).setDate(formatDate(year, month - 1, day));
             }
             if (type == Day.NOW_MONTH) {
-                paint.setColor(nowMonthDayTextColor);
+                days.get(i).setTextColor(nowMonthDayTextColor);
                 days.get(i).setDate(formatDate(year, month, day));
             }
             if (type == Day.NEXT_MONTH) {
-                paint.setColor(nextMonthDayTextColor);
+                days.get(i).setTextColor(nextMonthDayTextColor);
                 days.get(i).setDate(formatDate(year, month + 1, day));
             }
-            days.get(i).setTime(parseDate(days.get(i).getDate()).getTime());
-            String dayText = String.valueOf(days.get(i).getDay());
+            long time = parseDate(days.get(i).getDate()).getTime();
+            if (!isEnableSelect(time)) {
+                days.get(i).setTextColor(disableTextColor);
+            }
+            days.get(i).setTime(time);
             Rect bounds = new Rect();
             paint.getTextBounds(dayText, 0, dayText.length(), bounds);
-            float x = unitWidth * position + unitWidth / 2.0F - bounds.centerX();
-            float y = unitHeight + unitHeight * row + unitHeight / 2.0F - bounds.centerY();
+            float x = unitWidth * position + unitWidth / 2.0F - bounds.centerX() + getPaddingLeft();
+            float y = unitHeight + unitHeight * row + unitHeight / 2.0F - bounds.centerY() + getPaddingTop();
             days.get(i).setX(x);
             days.get(i).setY(y);
             days.get(i).setPosition(i);
             //圆坐标
-            float cx = unitWidth * position + unitWidth / 2.0F;
-            float cy = unitHeight + unitHeight * row + unitHeight / 2.0F;
+            float cx = unitWidth * position + unitWidth / 2.0F + getPaddingLeft();
+            float cy = unitHeight + unitHeight * row + unitHeight / 2.0F + getPaddingTop();
+            days.get(i).setCx(cx);
+            days.get(i).setCy(cy);
+            if (isSameDay(time, checkTime)) {
+                checkDay = days.get(i);
+            }
+            if (isSameDay(time, intervalStart)) {
+                startDay = days.get(i);
+            }
+            if (isSameDay(time, intervalEnd)) {
+                endDay = days.get(i);
+            }
+        }
+        for (int i = 0; i < days.size(); i++) {
+            int type = days.get(i).getType();
+            int day = days.get(i).getDay();
+            float cx = days.get(i).getCx();
+            float cy = days.get(i).getCy();
+            float x = days.get(i).getX();
+            float y = days.get(i).getY();
+            paint.setColor(days.get(i).getTextColor());
+            String dayText = String.valueOf(days.get(i).getDay());
             //当前天
-            Calendar calendar = Calendar.getInstance();
-            int nowYear = calendar.get(Calendar.YEAR);
-            int nowMonth = calendar.get(Calendar.MONTH) + 1;
-            if (showToday && type == Day.NOW_MONTH && nowYear == year && nowMonth == month && day == nowDay) {
+            if (showToday && type == Day.NOW_MONTH && day == nowDay) {
                 drawDayCircle(canvas, cx, cy, nowDayCircleColor);
                 paint.setColor(Color.WHITE);
             }
@@ -278,27 +350,48 @@ public class CalendarView extends View {
             //区间
             if (interval) {
                 long dayTime = days.get(i).getTime();
+                boolean hasInterval = startDay != null && endDay != null;
                 boolean isStart = startDay != null && dayTime == startDay.getTime();
                 boolean isEnd = endDay != null && dayTime == endDay.getTime();
-                if (isStart) {
-                    drawDayCircle(canvas, cx, cy, checkDayCircleColor);
-                    paint.setColor(Color.WHITE);
-                }
                 if (startDay != null && endDay != null) {
                     long statTime = startDay.getTime();
                     long endTime = endDay.getTime();
                     if (dayTime > statTime && dayTime < endTime) {
-                        drawDayCircle(canvas, cx, cy, checkDayIntervalColor);
+                        if (intervalShape == SHAPE_RECT) {
+                            drawDayRect(canvas, 0, cx, cy, checkDayIntervalColor);
+                        } else {
+                            drawDayCircle(canvas, cx, cy, checkDayIntervalColor);
+                        }
                         paint.setColor(Color.WHITE);
                     }
                 }
+                if (isStart) {
+                    if (intervalShape == SHAPE_RECT && hasInterval) {
+                        drawDayRect(canvas, -1, cx, cy, checkDayIntervalColor);
+                    }
+                    drawDayCircle(canvas, cx, cy, checkDayCircleColor);
+                    paint.setColor(Color.WHITE);
+                }
                 if (isEnd) {
+                    if (intervalShape == SHAPE_RECT && hasInterval) {
+                        drawDayRect(canvas, 1, cx, cy, checkDayIntervalColor);
+                    }
                     drawDayCircle(canvas, cx, cy, checkDayCircleColor);
                     paint.setColor(Color.WHITE);
                 }
             }
             canvas.drawText(dayText, x, y, paint);
         }
+    }
+
+    /**
+     * @param time   时间
+     * @param millis 毫秒时间
+     * @return 是否为同一天
+     */
+    private boolean isSameDay(long time, long millis) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        return dateFormat.format(new Date(time)).equals(dateFormat.format(new Date(millis)));
     }
 
     /**
@@ -343,6 +436,30 @@ public class CalendarView extends View {
         paint.setAntiAlias(true);
         paint.setColor(color);
         canvas.drawCircle(cx, cy, circleRadius, paint);
+    }
+
+    /**
+     * 绘制天矩形背景
+     *
+     * @param canvas 画布
+     * @param type   类型，-1：开始,0：中间 ,1:结尾
+     * @param cx     中心x
+     * @param cy     中心y
+     * @param color  颜色
+     */
+    private void drawDayRect(Canvas canvas, int type, float cx, float cy, int color) {
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setColor(color);
+        if (type == -1) {
+            canvas.drawRect(cx, cy - circleRadius, cx + unitWidth / 2, cy + circleRadius, paint);
+        }
+        if (type == 0) {
+            canvas.drawRect(cx - unitWidth / 2, cy - circleRadius, cx + unitWidth / 2, cy + circleRadius, paint);
+        }
+        if (type == 1) {
+            canvas.drawRect(cx - unitWidth / 2, cy - circleRadius, cx, cy + circleRadius, paint);
+        }
     }
 
     /**
@@ -568,16 +685,6 @@ public class CalendarView extends View {
     }
 
     /**
-     * 设置选中
-     *
-     * @param checkDay
-     */
-    public void setCheckDay(Day checkDay) {
-        this.checkDay = checkDay;
-        invalidate();
-    }
-
-    /**
      * 获取选中天
      *
      * @return
@@ -586,29 +693,11 @@ public class CalendarView extends View {
         return checkDay;
     }
 
-    /**
-     * 设置区间开始
-     *
-     * @param startDay
-     */
-    public void setStartDay(Day startDay) {
-        this.startDay = startDay;
-        invalidate();
-    }
 
     public Day getStartDay() {
         return startDay;
     }
 
-    /**
-     * 设置区间结束
-     *
-     * @param endDay
-     */
-    public void setEndDay(Day endDay) {
-        this.endDay = endDay;
-        invalidate();
-    }
 
     public Day getEndDay() {
         return endDay;
@@ -755,6 +844,223 @@ public class CalendarView extends View {
      */
     public void setCheckDayIntervalColor(int checkDayIntervalColor) {
         this.checkDayIntervalColor = checkDayIntervalColor;
+        invalidate();
+    }
+
+    /**
+     * 设置开始时间
+     *
+     * @param millis
+     */
+    public void setCheckTime(long millis) {
+        if (isEnableSelect(millis)) {
+            this.checkTime = millis;
+            invalidate();
+        }
+    }
+
+    /**
+     * 设置开始时间
+     *
+     * @param text 时间文字,格式 yyyy-MM-dd
+     */
+    public void setCheckTime(String text) {
+        setCheckTime(text, "yyyy-MM-dd");
+    }
+
+    /**
+     * 设置开始时间
+     *
+     * @param text    时间文字
+     * @param pattern 格式 yyyy-MM-dd
+     */
+    public void setCheckTime(String text, String pattern) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
+        try {
+            setCheckTime(dateFormat.parse(text).getTime());
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * @return 选中时间
+     */
+    public long getCheckTime() {
+        return checkTime;
+    }
+
+    /**
+     * 设置开始时间
+     *
+     * @param millis
+     */
+    public void setIntervalStart(long millis) {
+        if (isEnableSelect(millis)) {
+            this.intervalStart = millis;
+            invalidate();
+        }
+    }
+
+    /**
+     * 设置开始时间
+     *
+     * @param text 时间文字,格式 yyyy-MM-dd
+     */
+    public void setIntervalStart(String text) {
+        setIntervalStart(text, "yyyy-MM-dd");
+    }
+
+    /**
+     * 设置开始时间
+     *
+     * @param text    时间文字,格式 yyyy-MM-dd
+     * @param pattern 时间文字,格式 yyyy-MM-dd
+     */
+    public void setIntervalStart(String text, String pattern) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
+        try {
+            setIntervalStart(dateFormat.parse(text).getTime());
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * @return 开始时间
+     */
+    public long getIntervalStart() {
+        return intervalStart;
+    }
+
+    /**
+     * 设置结束时间
+     *
+     * @param millis 结束时间
+     */
+    public void setIntervalEnd(long millis) {
+        if (isEnableSelect(millis)) {
+            this.intervalEnd = millis;
+            invalidate();
+        }
+    }
+
+    /**
+     * 设置开始时间
+     *
+     * @param text 时间文字,格式：yyyy-MM-dd
+     */
+    public void setIntervalEnd(String text) {
+        setIntervalEnd(text, "yyyy-MM-dd");
+    }
+
+    /**
+     * 设置开始时间
+     *
+     * @param text    时间文字
+     * @param pattern 格式：yyyy-MM-dd
+     */
+    public void setIntervalEnd(String text, String pattern) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
+        try {
+            setIntervalEnd(dateFormat.parse(text).getTime());
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * @return 结束时间
+     */
+    public long getIntervalEnd() {
+        return intervalEnd;
+    }
+
+    /**
+     * 设置最大时间
+     *
+     * @param maxTime
+     */
+    public void setMaxTime(long maxTime) {
+        this.maxTime = maxTime;
+        invalidate();
+    }
+
+    /**
+     * 设置最大时间
+     *
+     * @param text 时间文字,格式：yyyy-MM-dd
+     */
+    public void setMaxTime(String text) {
+        setMaxTime(text, "yyyy-MM-dd");
+    }
+
+    /**
+     * 设置最大时间
+     *
+     * @param text    时间文字
+     * @param pattern 格式：yyyy-MM-dd
+     */
+    public void setMaxTime(String text, String pattern) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
+        try {
+            setMaxTime(dateFormat.parse(text).getTime());
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 设置最小时间
+     *
+     * @param minTime
+     */
+    public void setMinTime(long minTime) {
+        this.minTime = minTime;
+        invalidate();
+    }
+
+    /**
+     * 设置最小时间
+     *
+     * @param text 时间文字,格式：yyyy-MM-dd
+     */
+    public void setMinTime(String text) {
+        setMinTime(text, "yyyy-MM-dd");
+    }
+
+    /**
+     * 设置最小时间
+     *
+     * @param text    时间文字
+     * @param pattern 格式：yyyy-MM-dd
+     */
+    public void setMinTime(String text, String pattern) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
+        try {
+            setMinTime(dateFormat.parse(text).getTime());
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 设置禁用颜色
+     *
+     * @param disableTextColor
+     */
+    public void setDisableTextColor(int disableTextColor) {
+        this.disableTextColor = disableTextColor;
+        invalidate();
+    }
+
+    /**
+     * 设置区间图形样式
+     *
+     * @param intervalShape {@link CalendarView#SHAPE_CIRCLE}
+     */
+    public void setIntervalShape(int intervalShape) {
+        this.intervalShape = intervalShape;
         invalidate();
     }
 
