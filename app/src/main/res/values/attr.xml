@@ -1,24 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="CalendarView">
+        <!--年份-->
         <attr name="initYear" format="integer" />
+        <!--月份-->
         <attr name="initMonth" format="integer" />
+        <!--日-->
         <attr name="initDay" format="integer" />
+        <!--是否选择时段-->
         <attr name="isInterval" format="boolean" />
+        <!--是否显示当前日期-->
         <attr name="showToday" format="boolean" />
+        <!--周文字大小-->
         <attr name="weekTextSize" format="dimension|reference" />
+        <!--日文字大小-->
         <attr name="monthDayTextSize" format="dimension|reference" />
+        <!--选择圆圈半径-->
         <attr name="circleRadius" format="dimension|reference" />
+        <!--周文字颜色-->
         <attr name="weekTextColor" format="color|reference" />
+        <!--上个月日文字颜色-->
         <attr name="lastMonthDayTextColor" format="color|reference" />
+        <!--当前月日文字颜色-->
         <attr name="nowMonthDayTextColor" format="color|reference" />
+        <!--下个月日文字颜色-->
         <attr name="nextMonthDayTextColor" format="color|reference" />
+        <!--当前日圆圈颜色-->
         <attr name="nowDayCircleColor" format="color|reference" />
+        <!--选中日圆圈颜色-->
         <attr name="checkDayCircleColor" format="color|reference" />
+        <!--选中日区间圆圈颜色-->
         <attr name="checkDayIntervalColor" format="color|reference" />
+        <!--不可用文字颜色-->
         <attr name="disableTextColor" format="color|reference" />
+        <!--区间选中图形类型-->
         <attr name="intervalShape" format="enum">
+            <!--圈圈-->
             <enum name="circle" value="1"/>
+            <!--矩形-->
             <enum name="rect" value="2"/>
         </attr>
     </declare-styleable>
