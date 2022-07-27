@@ -60,6 +60,7 @@ public class CalendarView extends View {
     private int checkDayIntervalColor = Color.parseColor("#E9E7E7");
     //区间选中显示类型
     private int intervalShape = 1;
+    private float absMove = 5;
 
     /**
      * 图形-圆
@@ -128,6 +129,7 @@ public class CalendarView extends View {
             checkDayIntervalColor = array.getColor(R.styleable.CalendarView_checkDayIntervalColor, checkDayIntervalColor);
             disableTextColor = array.getColor(R.styleable.CalendarView_disableTextColor, disableTextColor);
             intervalShape = array.getInt(R.styleable.CalendarView_intervalShape, intervalShape);
+            absMove = array.getFloat(R.styleable.CalendarView_absMove, absMove);
             array.recycle();
         }
     }
@@ -139,51 +141,124 @@ public class CalendarView extends View {
         unitHeight = (getMeasuredHeight() - getPaddingTop() - getPaddingBottom()) / 7;
     }
 
+    /**
+     * 点击坐标
+     */
+    private float dx, dy;
+    /**
+     * 移动坐标
+     */
+    private float mx, my;
+    /**
+     * X - 移动方向
+     */
+    private int directionX;
+    /**
+     * Y - 移动方向
+     */
+    private int directionY;
+    /**
+     * X - 是否移动
+     */
+    private boolean isMoveX;
+    /**
+     * Y - 是否移动
+     */
+    private boolean isMoveY;
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                checkDay = findTouchDay(event.getX(), event.getY());
-                if (checkDay != null && isEnableSelect(checkDay.getTime())) {
-                    //判读是否是区间选择
-                    if (interval) {
-                        if (endDay != null && startDay != null) {
-                            startDay = checkDay;
-                            intervalStart = startDay.getTime();
-                            endDay = null;
-                            intervalEnd = -1;
-                        } else {
-                            if (endDay == null && startDay != null) {
-                                boolean isConversion = startDay.getTime() > checkDay.getTime();
-                                if (isConversion) {
-                                    endDay = startDay;
-                                    startDay = checkDay;
-                                    intervalStart = startDay.getTime();
-                                    intervalEnd = endDay.getTime();
-                                } else {
-                                    endDay = checkDay;
-                                    intervalEnd = endDay.getTime();
-                                }
-                            }
-                            if (startDay == null) {
-                                startDay = checkDay;
-                                intervalStart = startDay.getTime();
-                            }
-                        }
-                        if (onIntervalSelectListener != null && startDay != null && endDay != null) {
-                            onIntervalSelectListener.onCalendarIntervalSelected(this, toDate(startDay.getDay()), toDate(endDay.getDay()));
-                        }
-                    } else {
-                        checkTime = checkDay.getTime();
-                        if (onItemSelectListener != null) {
-                            onItemSelectListener.onCalendarItemSelected(this, toDate(checkDay.getDay()));
-                        }
+                dx = event.getX();
+                dy = event.getY();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                mx = event.getX() - dx;
+                my = event.getY() - dy;
+                float absMx = Math.abs(mx);
+                float absMy = Math.abs(my);
+                isMoveX = absMx > absMy && absMx > absMove && absMy > absMove;
+                isMoveY = absMx < absMy && absMx > absMove && absMy > absMove;
+                directionX = mx > 0 ? 1 : -1;
+                directionY = my > 0 ? -1 : 1;
+                break;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                Calendar calendar = Calendar.getInstance();
+                calendar.set(Calendar.YEAR, year);
+                calendar.set(Calendar.MONTH, month - 1);
+                calendar.set(Calendar.DAY_OF_MONTH, day);
+                if (isMoveX && !isMoveY) {
+                    if (directionX == -1) {
+                        calendar.add(Calendar.MONTH, 1);
                     }
-                    invalidate();
+                    if (directionX == 1) {
+                        calendar.add(Calendar.MONTH, -1);
+                    }
+                    setMonth(calendar.get(Calendar.MONTH) + 1);
+                }
+                if (isMoveY && !isMoveX) {
+                    if (directionY == -1) {
+                        calendar.add(Calendar.MONTH, -1);
+                    }
+                    if (directionY == 1) {
+                        calendar.add(Calendar.MONTH, 1);
+                    }
+                    setMonth(calendar.get(Calendar.MONTH) + 1);
+                }
+                if (!isMoveX && !isMoveY) {
+                    onTouchItemEvent(event);
                 }
                 break;
         }
         return true;
+    }
+
+    /**
+     * Item点击事件
+     *
+     * @param event 触摸事件
+     */
+    private void onTouchItemEvent(MotionEvent event) {
+        checkDay = findTouchDay(event.getX(), event.getY());
+        if (checkDay != null && isEnableSelect(checkDay.getTime())) {
+            //判读是否是区间选择
+            if (interval) {
+                if (endDay != null && startDay != null) {
+                    startDay = checkDay;
+                    intervalStart = startDay.getTime();
+                    endDay = null;
+                    intervalEnd = -1;
+                } else {
+                    if (endDay == null && startDay != null) {
+                        boolean isConversion = startDay.getTime() > checkDay.getTime();
+                        if (isConversion) {
+                            endDay = startDay;
+                            startDay = checkDay;
+                            intervalStart = startDay.getTime();
+                            intervalEnd = endDay.getTime();
+                        } else {
+                            endDay = checkDay;
+                            intervalEnd = endDay.getTime();
+                        }
+                    }
+                    if (startDay == null) {
+                        startDay = checkDay;
+                        intervalStart = startDay.getTime();
+                    }
+                }
+                if (onIntervalSelectListener != null && startDay != null && endDay != null) {
+                    onIntervalSelectListener.onCalendarIntervalSelected(this, toDate(startDay.getDay()), toDate(endDay.getDay()));
+                }
+            } else {
+                checkTime = checkDay.getTime();
+                if (onItemSelectListener != null) {
+                    onItemSelectListener.onCalendarItemSelected(this, toDate(checkDay.getDay()));
+                }
+            }
+            invalidate();
+        }
     }
 
     /**

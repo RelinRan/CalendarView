@@ -2,6 +2,10 @@
 自定义日历  
 1.单选  
 2.时间段选择  
+# Fix 2022.7.27.1  
+新增选中区间图形属性  
+新增水平滑动切换上下月  
+新增垂直滑动切换上下月  
 # 预览
 1.单选  
 ![单选效果](./ic_preview_02.png)  
@@ -12,9 +16,9 @@
 # 资源
 |名字|资源|
 |-|-|
-|AAR|[calendar_view.aar](https://github.com/RelinRan/CalendarView/blob/master/calendar_view.aar)|
-|Gitee|[CalendarView](https://gitee.com/relin/CalendarView)|
+|AAR|[calendar_view.aar](https://github.com/RelinRan/CalendarView/blob/master/calendar_view_2022.7.27.1.aar)|
 |GitHub | [CalendarView](https://github.com/RelinRan/CalendarView)|
+|Gitee|[CalendarView](https://gitee.com/relin/CalendarView)|
 # Maven
 1.build.grade | setting.grade
 ```
@@ -26,7 +30,7 @@ repositories {
 2./app/build.grade
 ```
 dependencies {
-	implementation 'com.github.RelinRan:CalendarView:2022.6.30.1'
+	implementation 'com.github.RelinRan:CalendarView:2022.7.27.1'
 }
 ```
 # xml
@@ -79,6 +83,8 @@ dependencies {
     <!--矩形-->
     <enum name="rect" value="2"/>
 </attr>
+<!--移动距离-->
+<attr name="absMove" format="float"/>
 ```
 # 单选
 ```

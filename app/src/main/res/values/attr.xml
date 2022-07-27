@@ -40,5 +40,7 @@
             <!--矩形-->
             <enum name="rect" value="2"/>
         </attr>
+        <!--移动距离-->
+        <attr name="absMove" format="float"/>
     </declare-styleable>
 </resources>
