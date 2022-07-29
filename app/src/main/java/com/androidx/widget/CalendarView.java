@@ -60,7 +60,8 @@ public class CalendarView extends View {
     private int checkDayIntervalColor = Color.parseColor("#E9E7E7");
     //区间选中显示类型
     private int intervalShape = 1;
-    private float absMove = 5;
+    //移动距离促发条件
+    private float absMove = dip(15);
 
     /**
      * 图形-圆
@@ -70,6 +71,14 @@ public class CalendarView extends View {
      * 图形 - 矩形
      */
     public static int SHAPE_RECT = 2;
+    /**
+     * 月份滑动方式-水平方向
+     */
+    public static int HORIZONTAL = 1;
+    /**
+     * 月份滑动方式 - 垂直方向
+     */
+    public static int VERTICAL = 2;
     //单位宽度
     private float unitWidth;
     //单位高度
@@ -92,6 +101,8 @@ public class CalendarView extends View {
     private long maxTime = -1;
     //最小时间
     private long minTime = -1;
+    //月份滑动方式
+    private int monthMode = HORIZONTAL;
 
     public CalendarView(Context context) {
         super(context);
@@ -129,7 +140,8 @@ public class CalendarView extends View {
             checkDayIntervalColor = array.getColor(R.styleable.CalendarView_checkDayIntervalColor, checkDayIntervalColor);
             disableTextColor = array.getColor(R.styleable.CalendarView_disableTextColor, disableTextColor);
             intervalShape = array.getInt(R.styleable.CalendarView_intervalShape, intervalShape);
-            absMove = array.getFloat(R.styleable.CalendarView_absMove, absMove);
+            absMove = array.getDimension(R.styleable.CalendarView_absMove, absMove);
+            monthMode = array.getInt(R.styleable.CalendarView_monthMode, HORIZONTAL);
             array.recycle();
         }
     }
@@ -148,7 +160,7 @@ public class CalendarView extends View {
     /**
      * 移动坐标
      */
-    private float mx, my;
+    private float oldScrollX, oldScrollY;
     /**
      * X - 移动方向
      */
@@ -174,14 +186,19 @@ public class CalendarView extends View {
                 dy = event.getY();
                 break;
             case MotionEvent.ACTION_MOVE:
-                mx = event.getX() - dx;
-                my = event.getY() - dy;
-                float absMx = Math.abs(mx);
-                float absMy = Math.abs(my);
+                float scrollX = event.getX() - dx;
+                float scrollY = event.getY() - dy;
+                float absMx = Math.abs(scrollX);
+                float absMy = Math.abs(scrollY);
                 isMoveX = absMx > absMy && absMx > absMove && absMy > absMove;
                 isMoveY = absMx < absMy && absMx > absMove && absMy > absMove;
-                directionX = mx > 0 ? 1 : -1;
-                directionY = my > 0 ? -1 : 1;
+                directionX = scrollX > 0 ? 1 : -1;
+                directionY = scrollY > 0 ? -1 : 1;
+                if (onCalendarScrollChangeListener != null) {
+                    onCalendarScrollChangeListener.onCalendarScrollChange(this, scrollX, scrollY, oldScrollX, oldScrollY);
+                }
+                oldScrollX = scrollX;
+                oldScrollY = scrollY;
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
@@ -189,7 +206,7 @@ public class CalendarView extends View {
                 calendar.set(Calendar.YEAR, year);
                 calendar.set(Calendar.MONTH, month - 1);
                 calendar.set(Calendar.DAY_OF_MONTH, day);
-                if (isMoveX && !isMoveY) {
+                if (monthMode == 1 && isMoveX && !isMoveY) {
                     if (directionX == -1) {
                         calendar.add(Calendar.MONTH, 1);
                     }
@@ -197,8 +214,11 @@ public class CalendarView extends View {
                         calendar.add(Calendar.MONTH, -1);
                     }
                     setMonth(calendar.get(Calendar.MONTH) + 1);
+                    if (onCalendarChangeListener != null) {
+                        onCalendarChangeListener.onCalendarChange(this, calendar.getTime());
+                    }
                 }
-                if (isMoveY && !isMoveX) {
+                if (monthMode == 2 && isMoveY && !isMoveX) {
                     if (directionY == -1) {
                         calendar.add(Calendar.MONTH, -1);
                     }
@@ -206,6 +226,9 @@ public class CalendarView extends View {
                         calendar.add(Calendar.MONTH, 1);
                     }
                     setMonth(calendar.get(Calendar.MONTH) + 1);
+                    if (onCalendarChangeListener != null) {
+                        onCalendarChangeListener.onCalendarChange(this, calendar.getTime());
+                    }
                 }
                 if (!isMoveX && !isMoveY) {
                     onTouchItemEvent(event);
@@ -213,6 +236,54 @@ public class CalendarView extends View {
                 break;
         }
         return true;
+    }
+
+    public interface OnCalendarScrollChangeListener {
+
+        /**
+         * 滑动监听事件
+         *
+         * @param v          View
+         * @param scrollX    x-滑动距离
+         * @param scrollY    y-滑动距离
+         * @param oldScrollX x-上次滑动距离
+         * @param oldScrollY y-上次滑动距离
+         */
+        void onCalendarScrollChange(View v, float scrollX, float scrollY, float oldScrollX, float oldScrollY);
+    }
+
+    private OnCalendarScrollChangeListener onCalendarScrollChangeListener;
+
+    /**
+     * 设置滑动监听事件
+     *
+     * @param onCalendarScrollChangeListener
+     */
+    public void setOnCalendarScrollChangeListener(OnCalendarScrollChangeListener onCalendarScrollChangeListener) {
+        this.onCalendarScrollChangeListener = onCalendarScrollChangeListener;
+    }
+
+    private OnCalendarChangeListener onCalendarChangeListener;
+
+    /**
+     * 设置日期改变监听
+     *
+     * @param onCalendarChangeListener
+     */
+    public void setOnCalendarChangeListener(OnCalendarChangeListener onCalendarChangeListener) {
+        this.onCalendarChangeListener = onCalendarChangeListener;
+    }
+
+    public interface OnCalendarChangeListener {
+
+        /**
+         * 日历改变监听
+         *
+         * @param v    日历View
+         * @param date 日期时间
+         */
+        void onCalendarChange(CalendarView v, Date date);
+
     }
 
     /**
@@ -231,21 +302,43 @@ public class CalendarView extends View {
                     endDay = null;
                     intervalEnd = -1;
                 } else {
-                    if (endDay == null && startDay != null) {
-                        boolean isConversion = startDay.getTime() > checkDay.getTime();
-                        if (isConversion) {
-                            endDay = startDay;
-                            startDay = checkDay;
-                            intervalStart = startDay.getTime();
-                            intervalEnd = endDay.getTime();
-                        } else {
-                            endDay = checkDay;
-                            intervalEnd = endDay.getTime();
-                        }
-                    }
                     if (startDay == null) {
                         startDay = checkDay;
                         intervalStart = startDay.getTime();
+                    }
+                    if (endDay == null && startDay != null) {
+                        if (startDay.getTime() > checkDay.getTime()) {
+                            startDay = checkDay;
+                            endDay = startDay;
+                            intervalStart = startDay.getTime();
+                            intervalEnd = endDay.getTime();
+                        }
+                        if (startDay.getTime() < checkDay.getTime()) {
+                            endDay = checkDay;
+                            intervalEnd = endDay.getTime();
+                        }
+                        if (startDay.getTime() == checkDay.getTime()){
+                            endDay = null;
+                            intervalEnd = -1;
+                        }
+                    }
+                    if (endDay != null && startDay == null && endDay.getTime() != checkDay.getTime()) {
+                        if (endDay.getTime() > checkDay.getTime()) {
+                            startDay = checkDay;
+                            endDay = startDay;
+                            intervalStart = startDay.getTime();
+                            intervalEnd = endDay.getTime();
+                        }
+                        if (endDay.getTime() < checkDay.getTime()) {
+                            startDay = endDay;
+                            endDay = checkDay;
+                        }
+                        intervalStart = startDay.getTime();
+                        intervalEnd = endDay.getTime();
+                        if (endDay.getTime() == checkDay.getTime()){
+                            startDay = null;
+                            intervalStart = -1;
+                        }
                     }
                 }
                 if (onIntervalSelectListener != null && startDay != null && endDay != null) {
@@ -357,7 +450,10 @@ public class CalendarView extends View {
         paint.setTextSize(monthDayTextSize);
         //绘制上个月的天数
         days = getCalendarDays(year, month);
-        int nowDay = day == 0 ? getNowDay() : day;
+        Calendar calendar = Calendar.getInstance();
+        int nowYear = calendar.get(Calendar.YEAR);
+        int nowMonth = calendar.get(Calendar.MONTH) + 1;
+        int nowDay = day == 0 ? calendar.get(Calendar.DAY_OF_MONTH) : day;
         for (int i = 0; i < days.size(); i++) {
             int row = i / 7;
             int position = i % 7;
@@ -413,7 +509,7 @@ public class CalendarView extends View {
             paint.setColor(days.get(i).getTextColor());
             String dayText = String.valueOf(days.get(i).getDay());
             //当前天
-            if (showToday && type == Day.NOW_MONTH && day == nowDay) {
+            if (showToday && type == Day.NOW_MONTH && year == nowYear && nowMonth == month && day == nowDay) {
                 drawDayCircle(canvas, cx, cy, nowDayCircleColor);
                 paint.setColor(Color.WHITE);
             }
@@ -655,17 +751,6 @@ public class CalendarView extends View {
     }
 
     /**
-     * 获取当前日期
-     *
-     * @return
-     */
-    public int getNowDay() {
-        Calendar calendar = Calendar.getInstance();
-        return calendar.get(Calendar.DAY_OF_MONTH);
-    }
-
-
-    /**
      * 日历时段选择监听
      */
     public interface OnIntervalSelectListener {
@@ -720,6 +805,7 @@ public class CalendarView extends View {
     public void setOnItemClickListener(OnItemSelectListener onItemSelectListener) {
         this.onItemSelectListener = onItemSelectListener;
     }
+
 
     /**
      * 获取当前年
@@ -1139,6 +1225,38 @@ public class CalendarView extends View {
         invalidate();
     }
 
+    /**
+     * 设置月份滑动模式
+     *
+     * @param monthMode 滑动模式{@link #HORIZONTAL}
+     */
+    public void setMonthMode(int monthMode) {
+        this.monthMode = monthMode;
+        invalidate();
+    }
+
+    /**
+     * @return 月份滑动模式
+     */
+    public int getMonthMode() {
+        return monthMode;
+    }
+
+    /**
+     * 设置移动距离促发条件
+     * @param absMove
+     */
+    public void setAbsMove(float absMove) {
+        this.absMove = absMove;
+        invalidate();
+    }
+
+    /**
+     * @return 设置移动距离促发条件
+     */
+    public float getAbsMove() {
+        return absMove;
+    }
 }
 
 

@@ -2,10 +2,14 @@
 自定义日历  
 1.单选  
 2.时间段选择  
-# Fix 2022.7.27.1  
-新增选中区间图形属性  
-新增水平滑动切换上下月  
-新增垂直滑动切换上下月  
+# Fix 2022.7.29.1  
+新增选中区间图形属性；  
+新增水平滑动切换上下月；  
+新增垂直滑动切换上下月；  
+新增移动距离促发条件absMove属性；  
+新增月份滑动方式monthMode属性； 
+新增日历月份滑动监听OnCalendarChangeListener；  
+新增日历滑动监听OnCalendarScrollChangeListener；  
 # 预览
 1.单选  
 ![单选效果](./ic_preview_02.png)  
@@ -16,7 +20,7 @@
 # 资源
 |名字|资源|
 |-|-|
-|AAR|[calendar_view.aar](https://github.com/RelinRan/CalendarView/blob/master/calendar_view_2022.7.27.1.aar)|
+|AAR|[calendar_view.aar](https://github.com/RelinRan/CalendarView/blob/master/calendar_view_2022.7.29.1.aar)|
 |GitHub | [CalendarView](https://github.com/RelinRan/CalendarView)|
 |Gitee|[CalendarView](https://gitee.com/relin/CalendarView)|
 # Maven
@@ -30,7 +34,7 @@ repositories {
 2./app/build.grade
 ```
 dependencies {
-	implementation 'com.github.RelinRan:CalendarView:2022.7.27.1'
+	implementation 'com.github.RelinRan:CalendarView:2022.7.29.1'
 }
 ```
 # xml
@@ -83,8 +87,15 @@ dependencies {
     <!--矩形-->
     <enum name="rect" value="2"/>
 </attr>
-<!--移动距离-->
-<attr name="absMove" format="float"/>
+<!--移动距离促发条件-->
+<attr name="absMove" format="dimension" />
+<!--月份滑动方式-->
+<attr name="monthMode" format="enum">
+    <!--水平-->
+    <enum name="horizontal" value="1" />
+    <!--垂直-->
+    <enum name="vertical" value="2" />
+</attr>
 ```
 # 单选
 ```
@@ -122,5 +133,21 @@ calendar.setMaxTime("2022-07-20");
 calendar.setOnIntervalSelectListener((view, start, end) -> {
     String startTime = dateFormat.format(start);
     String endTime = dateFormat.format(end);
+});
+```
+# 滑动月份监听
+```
+CalendarView calendar = findViewById(R.id.calendar);
+//日期改变监听
+calendar_view.setOnCalendarChangeListener((calendarView, date) -> {
+    String text = new SimpleDateFormat("yyyy-MM-dd").format(date);
+});
+```
+# 日历滑动监听
+```
+CalendarView calendar = findViewById(R.id.calendar);
+//滑动监听监听
+calendar_view.setOnCalendarScrollChangeListener((view, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+
 });
 ```
