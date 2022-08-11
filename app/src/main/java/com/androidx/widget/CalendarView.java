@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -60,8 +61,6 @@ public class CalendarView extends View {
     private int checkDayIntervalColor = Color.parseColor("#E9E7E7");
     //区间选中显示类型
     private int intervalShape = 1;
-    //移动距离促发条件
-    private float absMove = dip(15);
 
     /**
      * 图形-圆
@@ -79,6 +78,8 @@ public class CalendarView extends View {
      * 月份滑动方式 - 垂直方向
      */
     public static int VERTICAL = 2;
+
+
     //单位宽度
     private float unitWidth;
     //单位高度
@@ -95,6 +96,7 @@ public class CalendarView extends View {
     private long intervalStart = -1;
     //结束时间
     private long intervalEnd = -1;
+
     //选中时间
     private long checkTime = -1;
     //最大时间
@@ -103,6 +105,14 @@ public class CalendarView extends View {
     private long minTime = -1;
     //月份滑动方式
     private int monthMode = HORIZONTAL;
+    //禁用 - 最大时间
+    private long disableMaxTime = -1;
+    //禁用 - 最小时间
+    private long disableMinTime = -1;
+    //可滑动
+    private boolean monthScrollable = true;
+    //可点击
+    private boolean itemClickable = true;
 
     public CalendarView(Context context) {
         super(context);
@@ -140,7 +150,6 @@ public class CalendarView extends View {
             checkDayIntervalColor = array.getColor(R.styleable.CalendarView_checkDayIntervalColor, checkDayIntervalColor);
             disableTextColor = array.getColor(R.styleable.CalendarView_disableTextColor, disableTextColor);
             intervalShape = array.getInt(R.styleable.CalendarView_intervalShape, intervalShape);
-            absMove = array.getDimension(R.styleable.CalendarView_absMove, absMove);
             monthMode = array.getInt(R.styleable.CalendarView_monthMode, HORIZONTAL);
             array.recycle();
         }
@@ -188,10 +197,6 @@ public class CalendarView extends View {
             case MotionEvent.ACTION_MOVE:
                 float scrollX = event.getX() - dx;
                 float scrollY = event.getY() - dy;
-                float absMx = Math.abs(scrollX);
-                float absMy = Math.abs(scrollY);
-                isMoveX = absMx > absMy && absMx > absMove && absMy > absMove;
-                isMoveY = absMx < absMy && absMx > absMove && absMy > absMove;
                 directionX = scrollX > 0 ? 1 : -1;
                 directionY = scrollY > 0 ? -1 : 1;
                 if (onCalendarScrollChangeListener != null) {
@@ -202,40 +207,67 @@ public class CalendarView extends View {
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                Calendar calendar = Calendar.getInstance();
-                calendar.set(Calendar.YEAR, year);
-                calendar.set(Calendar.MONTH, month - 1);
-                calendar.set(Calendar.DAY_OF_MONTH, day);
-                if (monthMode == 1 && isMoveX && !isMoveY) {
-                    if (directionX == -1) {
-                        calendar.add(Calendar.MONTH, 1);
+                float absMx = Math.abs(event.getX() - dx);
+                float absMy = Math.abs(event.getY() - dy);
+                float tan = absMy / absMx;
+                isMoveX =  tan < 0.5F;
+                isMoveY =  tan > 1F;
+                if (isMonthScrollable()){
+                    Calendar calendar = getCalendar();
+                    if (monthMode == 1 && isMoveX && !isMoveY) {
+                        if (directionX == -1) {
+                            calendar.add(Calendar.MONTH, 1);
+                        }
+                        if (directionX == 1) {
+                            calendar.add(Calendar.MONTH, -1);
+                        }
+                        year = calendar.get(Calendar.YEAR);
+                        month = calendar.get(Calendar.MONTH) + 1;
+                        onCalendarChanged(calendar);
+                        invalidate();
                     }
-                    if (directionX == 1) {
-                        calendar.add(Calendar.MONTH, -1);
-                    }
-                    setMonth(calendar.get(Calendar.MONTH) + 1);
-                    if (onCalendarChangeListener != null) {
-                        onCalendarChangeListener.onCalendarChange(this, calendar.getTime());
+                    if (monthMode == 2 && isMoveY && !isMoveX) {
+                        if (directionY == -1) {
+                            calendar.add(Calendar.MONTH, -1);
+                        }
+                        if (directionY == 1) {
+                            calendar.add(Calendar.MONTH, 1);
+                        }
+                        year = calendar.get(Calendar.YEAR);
+                        month = calendar.get(Calendar.MONTH) + 1;
+                        onCalendarChanged(calendar);
+                        invalidate();
                     }
                 }
-                if (monthMode == 2 && isMoveY && !isMoveX) {
-                    if (directionY == -1) {
-                        calendar.add(Calendar.MONTH, -1);
-                    }
-                    if (directionY == 1) {
-                        calendar.add(Calendar.MONTH, 1);
-                    }
-                    setMonth(calendar.get(Calendar.MONTH) + 1);
-                    if (onCalendarChangeListener != null) {
-                        onCalendarChangeListener.onCalendarChange(this, calendar.getTime());
-                    }
-                }
-                if (!isMoveX && !isMoveY) {
+                boolean isXMove = monthMode == 1 && !isMoveX;
+                boolean isYMove = monthMode == 2 && !isMoveY;
+                if (isXMove || isYMove) {
                     onTouchItemEvent(event);
                 }
                 break;
         }
         return true;
+    }
+
+    /**
+     * @return 当前日历时间
+     */
+    private Calendar getCalendar() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.YEAR, year);
+        calendar.set(Calendar.MONTH, month - 1);
+        calendar.set(Calendar.DAY_OF_MONTH, day);
+        return calendar;
+    }
+
+    /**
+     * 日历改变
+     * @param calendar
+     */
+    protected void onCalendarChanged(Calendar calendar) {
+        if (onCalendarChangeListener != null) {
+            onCalendarChangeListener.onCalendarChange(this, calendar.getTime());
+        }
     }
 
     public interface OnCalendarScrollChangeListener {
@@ -292,8 +324,15 @@ public class CalendarView extends View {
      * @param event 触摸事件
      */
     private void onTouchItemEvent(MotionEvent event) {
+        if (!isItemClickable()){
+            return;
+        }
         checkDay = findTouchDay(event.getX(), event.getY());
-        if (checkDay != null && isEnableSelect(checkDay.getTime())) {
+        if (checkDay == null) {
+            return;
+        }
+        boolean enable = isEnableSelect(checkDay.getTime()) && !isDisableSelect(checkDay.getTime());
+        if (enable) {
             //判读是否是区间选择
             if (interval) {
                 if (endDay != null && startDay != null) {
@@ -317,7 +356,7 @@ public class CalendarView extends View {
                             endDay = checkDay;
                             intervalEnd = endDay.getTime();
                         }
-                        if (startDay.getTime() == checkDay.getTime()){
+                        if (startDay.getTime() == checkDay.getTime()) {
                             endDay = null;
                             intervalEnd = -1;
                         }
@@ -335,19 +374,19 @@ public class CalendarView extends View {
                         }
                         intervalStart = startDay.getTime();
                         intervalEnd = endDay.getTime();
-                        if (endDay.getTime() == checkDay.getTime()){
+                        if (endDay.getTime() == checkDay.getTime()) {
                             startDay = null;
                             intervalStart = -1;
                         }
                     }
                 }
                 if (onIntervalSelectListener != null && startDay != null && endDay != null) {
-                    onIntervalSelectListener.onCalendarIntervalSelected(this, toDate(startDay.getDay()), toDate(endDay.getDay()));
+                    onIntervalSelectListener.onCalendarIntervalSelected(this, new Date(startDay.getTime()), new Date(endDay.getTime()));
                 }
             } else {
                 checkTime = checkDay.getTime();
                 if (onItemSelectListener != null) {
-                    onItemSelectListener.onCalendarItemSelected(this, toDate(checkDay.getDay()));
+                    onItemSelectListener.onCalendarItemSelected(this, new Date(checkDay.getTime()));
                 }
             }
             invalidate();
@@ -369,6 +408,23 @@ public class CalendarView extends View {
             return time <= maxTime;
         }
         return time >= minTime && time <= maxTime;
+    }
+
+    /**
+     * @param time
+     * @return 是否不可选时间
+     */
+    private boolean isDisableSelect(long time) {
+        if (disableMinTime == -1 && disableMaxTime == -1) {
+            return false;
+        }
+        if (disableMinTime != -1 && disableMaxTime == -1) {
+            return time >= disableMinTime;
+        }
+        if (disableMinTime == -1 && disableMaxTime != -1) {
+            return time <= disableMaxTime;
+        }
+        return time >= disableMinTime && time <= disableMaxTime;
     }
 
     /**
@@ -473,7 +529,7 @@ public class CalendarView extends View {
                 days.get(i).setDate(formatDate(year, month + 1, day));
             }
             long time = parseDate(days.get(i).getDate()).getTime();
-            if (!isEnableSelect(time)) {
+            if (!isEnableSelect(time) || isDisableSelect(time)) {
                 days.get(i).setTextColor(disableTextColor);
             }
             days.get(i).setTime(time);
@@ -802,7 +858,7 @@ public class CalendarView extends View {
      *
      * @param onItemSelectListener
      */
-    public void setOnItemClickListener(OnItemSelectListener onItemSelectListener) {
+    public void setOnItemSelectListener(OnItemSelectListener onItemSelectListener) {
         this.onItemSelectListener = onItemSelectListener;
     }
 
@@ -854,12 +910,16 @@ public class CalendarView extends View {
         return checkDay;
     }
 
-
+    /**
+     * @return 开始时间
+     */
     public Day getStartDay() {
         return startDay;
     }
 
-
+    /**
+     * @return 结束时间
+     */
     public Day getEndDay() {
         return endDay;
     }
@@ -882,6 +942,7 @@ public class CalendarView extends View {
     public void setYear(int year) {
         this.year = year;
         invalidate();
+        onCalendarChanged(getCalendar());
     }
 
     /**
@@ -892,6 +953,7 @@ public class CalendarView extends View {
     public void setMonth(int month) {
         this.month = month;
         invalidate();
+        onCalendarChanged(getCalendar());
     }
 
     /**
@@ -902,6 +964,7 @@ public class CalendarView extends View {
     public void setDay(int day) {
         this.day = day;
         invalidate();
+        onCalendarChanged(getCalendar());
     }
 
     /**
@@ -913,6 +976,7 @@ public class CalendarView extends View {
         this.year = year;
         this.month = month;
         invalidate();
+        onCalendarChanged(getCalendar());
     }
 
     /**
@@ -936,6 +1000,7 @@ public class CalendarView extends View {
         this.month = month;
         this.day = day;
         invalidate();
+        onCalendarChanged(getCalendar());
     }
 
     /**
@@ -1243,20 +1308,121 @@ public class CalendarView extends View {
     }
 
     /**
-     * 设置移动距离促发条件
-     * @param absMove
+     * 设置禁用最小时间
+     *
+     * @param time
      */
-    public void setAbsMove(float absMove) {
-        this.absMove = absMove;
+    public void setDisableMinTime(long time) {
+        this.disableMinTime = time;
         invalidate();
     }
 
     /**
-     * @return 设置移动距离促发条件
+     * 设置最小时间
+     *
+     * @param text 时间文字,格式：yyyy-MM-dd
      */
-    public float getAbsMove() {
-        return absMove;
+    public void setDisableMinTime(String text) {
+        setDisableMinTime(text, "yyyy-MM-dd");
     }
+
+    /**
+     * 设置禁用最小时间
+     *
+     * @param text    时间文字
+     * @param pattern 格式：yyyy-MM-dd
+     */
+    public void setDisableMinTime(String text, String pattern) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
+        try {
+            setDisableMinTime(dateFormat.parse(text).getTime());
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * @return 禁用最小时间
+     */
+    public long getDisableMinTime() {
+        return disableMinTime;
+    }
+
+    /**
+     * 设置禁用最大时间
+     *
+     * @param time
+     */
+    public void setDisableMaxTime(long time) {
+        this.disableMaxTime = time;
+        invalidate();
+    }
+
+    /**
+     * 设置最小时间
+     *
+     * @param text 时间文字,格式：yyyy-MM-dd
+     */
+    public void setDisableMaxTime(String text) {
+        setDisableMaxTime(text, "yyyy-MM-dd");
+    }
+
+    /**
+     * 设置禁用最大时间
+     *
+     * @param text    时间文字
+     * @param pattern 格式：yyyy-MM-dd
+     */
+    public void setDisableMaxTime(String text, String pattern) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
+        try {
+            setDisableMaxTime(dateFormat.parse(text).getTime());
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * @return 禁用最大时间
+     */
+    public long getDisableMaxTime() {
+        return disableMaxTime;
+    }
+
+    /**
+     * @return 月份是否可滑动
+     */
+    public boolean isMonthScrollable() {
+        return monthScrollable;
+    }
+
+    /**
+     * 设置月份是否可滑动
+     *
+     * @param monthScrollable
+     */
+    public void setMonthScrollable(boolean monthScrollable) {
+        this.monthScrollable = monthScrollable;
+        invalidate();
+    }
+
+    /**
+     * @return 天item是否可点击
+     */
+    public boolean isItemClickable() {
+        return itemClickable;
+    }
+
+    /**
+     * 设置天item是否可点击
+     *
+     * @param itemClickable
+     */
+    public void setItemClickable(boolean itemClickable) {
+        this.itemClickable = itemClickable;
+        invalidate();
+    }
+
 }
 
 

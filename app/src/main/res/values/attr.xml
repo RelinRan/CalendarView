@@ -40,8 +40,6 @@
             <!--矩形-->
             <enum name="rect" value="2" />
         </attr>
-        <!--移动距离促发条件-->
-        <attr name="absMove" format="dimension" />
         <!--月份滑动方式-->
         <attr name="monthMode" format="enum">
             <!--水平-->

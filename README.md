@@ -2,7 +2,7 @@
 自定义日历  
 1.单选  
 2.时间段选择  
-# Fix 2022.7.29.1  
+# Fix 2022.8.11.1  
 新增选中区间图形属性；  
 新增水平滑动切换上下月；  
 新增垂直滑动切换上下月；  
@@ -10,6 +10,15 @@
 新增月份滑动方式monthMode属性； 
 新增日历月份滑动监听OnCalendarChangeListener；  
 新增日历滑动监听OnCalendarScrollChangeListener；  
+删除attr.xml中absMove属性；  
+优化垂直水平滑动算法；  
+新增禁用时间max参数setDisableMinTime()；  
+新增禁用时段min参数setDisableMinTime();  
+修改item点击事件名称；  
+单选监听月份bug修复；  
+设置年份、月份、自动促发onCalendarChange监听事件；  
+新增设置月份是否可滑动方法;  
+新增设置item是否可点击方法;  
 # 预览
 1.单选  
 ![单选效果](./ic_preview_02.png)  
@@ -20,7 +29,7 @@
 # 资源
 |名字|资源|
 |-|-|
-|AAR|[calendar_view.aar](https://github.com/RelinRan/CalendarView/blob/master/calendar_view_2022.7.29.1.aar)|
+|AAR|[calendar_view.aar](https://github.com/RelinRan/CalendarView/blob/master/calendar_view_2022.8.11.1.aar)|
 |GitHub | [CalendarView](https://github.com/RelinRan/CalendarView)|
 |Gitee|[CalendarView](https://gitee.com/relin/CalendarView)|
 # Maven
@@ -34,7 +43,7 @@ repositories {
 2./app/build.grade
 ```
 dependencies {
-	implementation 'com.github.RelinRan:CalendarView:2022.7.29.1'
+	implementation 'com.github.RelinRan:CalendarView:2022.8.11.1'
 }
 ```
 # xml
@@ -87,8 +96,6 @@ dependencies {
     <!--矩形-->
     <enum name="rect" value="2"/>
 </attr>
-<!--移动距离促发条件-->
-<attr name="absMove" format="dimension" />
 <!--月份滑动方式-->
 <attr name="monthMode" format="enum">
     <!--水平-->
@@ -96,6 +103,16 @@ dependencies {
     <!--垂直-->
     <enum name="vertical" value="2" />
 </attr>
+```
+# 设置月份是否可滑动
+```
+CalendarView calendar = findViewById(R.id.calendar);
+calendar.setMonthScrollable(true);
+```
+# 设置item是否可点击
+```
+CalendarView calendar = findViewById(R.id.calendar);
+calendar.setItemClickable(true);
 ```
 # 单选
 ```
@@ -111,7 +128,7 @@ calendar.setCheckTime("2022-06-20");
 calendar.setMinTime("2022-06-01");
 calendar.setMaxTime("2022-07-20");
 //选中监听
-calendar.setOnItemClickListener((calendarView, time) -> {
+calendar.setOnItemSelectListener((calendarView, time) -> {
     String date = dateFormat.format(time);
 });
 ```
@@ -126,9 +143,12 @@ calendar.setInterval(true);
 //设置选中区间
 calendar.setIntervalStart("2022-06-20");
 calendar.setIntervalEnd("2022-07-05");
-//设置可选区间
+//设置可选区间（注意可用和禁用只能设置一种）
 calendar.setMinTime("2022-06-01");
 calendar.setMaxTime("2022-07-20");
+//设置禁用区间（注意可用和禁用只能设置一种）
+calendar.setDisableMinTime("2022-05-01");
+calendar.setDisableMaxTime("2022-05-20");
 //选择监听
 calendar.setOnIntervalSelectListener((view, start, end) -> {
     String startTime = dateFormat.format(start);
