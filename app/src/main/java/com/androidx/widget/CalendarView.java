@@ -6,8 +6,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -37,6 +37,8 @@ public class CalendarView extends View {
     private boolean interval = true;
     //是否显示今天
     private boolean showToday = true;
+    //当前日期文字
+    private String todayText = "今";
     //星期文字大小
     private float weekTextSize = dip(14);
     //天文字大小
@@ -107,8 +109,10 @@ public class CalendarView extends View {
     private int monthMode = HORIZONTAL;
     //禁用 - 最大时间
     private long disableMaxTime = -1;
+    private long disableMaxTimes[];
     //禁用 - 最小时间
     private long disableMinTime = -1;
+    private long disableMinTimes[];
     //可滑动
     private boolean monthScrollable = true;
     //可点击
@@ -138,6 +142,7 @@ public class CalendarView extends View {
             day = array.getInt(R.styleable.CalendarView_initDay, calendar.get(Calendar.DAY_OF_MONTH));
             interval = array.getBoolean(R.styleable.CalendarView_isInterval, interval);
             showToday = array.getBoolean(R.styleable.CalendarView_showToday, showToday);
+            todayText = array.getString(R.styleable.CalendarView_todayText);
             weekTextSize = array.getDimension(R.styleable.CalendarView_weekTextSize, weekTextSize);
             monthDayTextSize = array.getDimension(R.styleable.CalendarView_monthDayTextSize, monthDayTextSize);
             circleRadius = array.getDimension(R.styleable.CalendarView_circleRadius, circleRadius);
@@ -210,16 +215,20 @@ public class CalendarView extends View {
                 float absMx = Math.abs(event.getX() - dx);
                 float absMy = Math.abs(event.getY() - dy);
                 float tan = absMy / absMx;
-                isMoveX =  tan < 0.5F;
-                isMoveY =  tan > 1F;
-                if (isMonthScrollable()){
+                isMoveX = tan < 0.5F;
+                isMoveY = tan > 1F;
+                if (isMonthScrollable()) {
                     Calendar calendar = getCalendar();
                     if (monthMode == 1 && isMoveX && !isMoveY) {
                         if (directionX == -1) {
                             calendar.add(Calendar.MONTH, 1);
                         }
                         if (directionX == 1) {
-                            calendar.add(Calendar.MONTH, -1);
+                            if (month - 2 == 0) {
+                                calendar.set(Calendar.MONTH, month - 2);
+                            } else {
+                                calendar.add(Calendar.MONTH, -1);
+                            }
                         }
                         year = calendar.get(Calendar.YEAR);
                         month = calendar.get(Calendar.MONTH) + 1;
@@ -228,7 +237,11 @@ public class CalendarView extends View {
                     }
                     if (monthMode == 2 && isMoveY && !isMoveX) {
                         if (directionY == -1) {
-                            calendar.add(Calendar.MONTH, -1);
+                            if (month - 2 == 0) {
+                                calendar.set(Calendar.MONTH, month - 2);
+                            } else {
+                                calendar.add(Calendar.MONTH, -1);
+                            }
                         }
                         if (directionY == 1) {
                             calendar.add(Calendar.MONTH, 1);
@@ -262,6 +275,7 @@ public class CalendarView extends View {
 
     /**
      * 日历改变
+     *
      * @param calendar
      */
     protected void onCalendarChanged(Calendar calendar) {
@@ -324,14 +338,14 @@ public class CalendarView extends View {
      * @param event 触摸事件
      */
     private void onTouchItemEvent(MotionEvent event) {
-        if (!isItemClickable()){
+        if (!isItemClickable()) {
             return;
         }
         checkDay = findTouchDay(event.getX(), event.getY());
         if (checkDay == null) {
             return;
         }
-        boolean enable = isEnableSelect(checkDay.getTime()) && !isDisableSelect(checkDay.getTime());
+        boolean enable = isEnableSelect(checkDay.getTime()) && !isDisableSelect(checkDay.getTime()) && !isDisableArraySelect(checkDay.getTime());
         if (enable) {
             //判读是否是区间选择
             if (interval) {
@@ -426,6 +440,29 @@ public class CalendarView extends View {
         }
         return time >= disableMinTime && time <= disableMaxTime;
     }
+
+    /**
+     * @param time 时间
+     * @return 是否不可选时间
+     */
+    private boolean isDisableArraySelect(long time) {
+        if (disableMinTimes==null||disableMaxTimes==null){
+            return false;
+        }
+        int minLength = disableMinTimes.length;
+        int maxLength = disableMaxTimes.length;
+        if (minLength == maxLength && minLength > 0 && maxLength > 0) {
+            for (int i = 0; i < minLength; i++) {
+                long disableMinTime = disableMinTimes[i];
+                long disableMaxTime = disableMaxTimes[i];
+                if (time >= disableMinTime && time <= disableMaxTime) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 
     /**
      * @param day 天
@@ -529,7 +566,7 @@ public class CalendarView extends View {
                 days.get(i).setDate(formatDate(year, month + 1, day));
             }
             long time = parseDate(days.get(i).getDate()).getTime();
-            if (!isEnableSelect(time) || isDisableSelect(time)) {
+            if (!isEnableSelect(time) || isDisableSelect(time) || isDisableArraySelect(time)) {
                 days.get(i).setTextColor(disableTextColor);
             }
             days.get(i).setTime(time);
@@ -566,6 +603,9 @@ public class CalendarView extends View {
             String dayText = String.valueOf(days.get(i).getDay());
             //当前天
             if (showToday && type == Day.NOW_MONTH && year == nowYear && nowMonth == month && day == nowDay) {
+                if (!TextUtils.isEmpty(todayText)) {
+                    dayText = todayText;
+                }
                 drawDayCircle(canvas, cx, cy, nowDayCircleColor);
                 paint.setColor(Color.WHITE);
             }
@@ -1318,12 +1358,31 @@ public class CalendarView extends View {
     }
 
     /**
+     * 设置禁用最小时间数组
+     *
+     * @param times
+     */
+    public void setDisableMinTimes(long[] times) {
+        this.disableMinTimes = times;
+        invalidate();
+    }
+
+    /**
      * 设置最小时间
      *
      * @param text 时间文字,格式：yyyy-MM-dd
      */
     public void setDisableMinTime(String text) {
         setDisableMinTime(text, "yyyy-MM-dd");
+    }
+
+    /**
+     * 设置最小时间数组
+     *
+     * @param texts 时间文字数组,格式：yyyy-MM-dd
+     */
+    public void setDisableMinTimes(String[] texts) {
+        setDisableMinTimes(texts, "yyyy-MM-dd");
     }
 
     /**
@@ -1342,10 +1401,37 @@ public class CalendarView extends View {
     }
 
     /**
+     * 设置最小时间数组
+     *
+     * @param texts   时间数组
+     * @param pattern 时间文字,格式：yyyy-MM-dd
+     */
+    public void setDisableMinTimes(String[] texts, String pattern) {
+        disableMinTimes = new long[texts.length];
+        SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
+        try {
+            for (int i = 0; i < texts.length; i++) {
+                long date = dateFormat.parse(texts[i]).getTime();
+                disableMinTimes[i] = date;
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        invalidate();
+    }
+
+    /**
      * @return 禁用最小时间
      */
     public long getDisableMinTime() {
         return disableMinTime;
+    }
+
+    /**
+     * @return 禁用最小时间数组
+     */
+    public long[] getDisableMinTimes() {
+        return disableMinTimes;
     }
 
     /**
@@ -1359,12 +1445,31 @@ public class CalendarView extends View {
     }
 
     /**
+     * 设置禁用最大时间数组
+     *
+     * @param times
+     */
+    public void setDisableMaxTimes(long[] times) {
+        this.disableMaxTimes = times;
+        invalidate();
+    }
+
+    /**
      * 设置最小时间
      *
      * @param text 时间文字,格式：yyyy-MM-dd
      */
     public void setDisableMaxTime(String text) {
         setDisableMaxTime(text, "yyyy-MM-dd");
+    }
+
+    /**
+     * 设置最大时间数组
+     *
+     * @param texts 时间文字数组,格式：yyyy-MM-dd
+     */
+    public void setDisableMaxTimes(String[] texts) {
+        setDisableMaxTimes(texts, "yyyy-MM-dd");
     }
 
     /**
@@ -1383,10 +1488,37 @@ public class CalendarView extends View {
     }
 
     /**
+     * 设置最大时间数组
+     *
+     * @param texts   时间数组
+     * @param pattern 时间文字,格式：yyyy-MM-dd
+     */
+    public void setDisableMaxTimes(String[] texts, String pattern) {
+        disableMaxTimes = new long[texts.length];
+        SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
+        try {
+            for (int i = 0; i < texts.length; i++) {
+                long date = dateFormat.parse(texts[i]).getTime();
+                disableMaxTimes[i] = date;
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        invalidate();
+    }
+
+    /**
      * @return 禁用最大时间
      */
     public long getDisableMaxTime() {
         return disableMaxTime;
+    }
+
+    /**
+     * @return 禁用最大时间数组
+     */
+    public long[] getDisableMaxTimes() {
+        return disableMaxTimes;
     }
 
     /**
@@ -1420,6 +1552,15 @@ public class CalendarView extends View {
      */
     public void setItemClickable(boolean itemClickable) {
         this.itemClickable = itemClickable;
+        invalidate();
+    }
+
+    /**
+     * 设置今日文字
+     * @param todayText 例如：今
+     */
+    public void setTodayText(String todayText) {
+        this.todayText = todayText;
         invalidate();
     }
 

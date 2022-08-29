@@ -11,6 +11,8 @@
         <attr name="isInterval" format="boolean" />
         <!--是否显示当前日期-->
         <attr name="showToday" format="boolean" />
+        <!--当前日期文字-->
+        <attr name="todayText" format="string|reference" />
         <!--周文字大小-->
         <attr name="weekTextSize" format="dimension|reference" />
         <!--日文字大小-->

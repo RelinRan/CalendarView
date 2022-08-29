@@ -2,7 +2,7 @@
 自定义日历  
 1.单选  
 2.时间段选择  
-# Fix 2022.8.11.1  
+# Fix 2022.8.29.1  
 新增选中区间图形属性；  
 新增水平滑动切换上下月；  
 新增垂直滑动切换上下月；  
@@ -19,6 +19,8 @@
 设置年份、月份、自动促发onCalendarChange监听事件；  
 新增设置月份是否可滑动方法;  
 新增设置item是否可点击方法;  
+新增设置禁用区间数组;  
+新增todayText属性设置当前日期文字；  
 # 预览
 1.单选  
 ![单选效果](./ic_preview_02.png)  
@@ -26,6 +28,8 @@
 ![时段选择效果-circle](./ic_preview_01.png)  
 3.时段效果 - (注意：2022.3.30.1版本以前不支持) - intervalShape=“rect”  
 ![时段选择效果-rect](./ic_preview_03.png)  
+3.今日效果 - todayText=“今”  
+![今日效果](./ic_preview_04.png)  
 # 资源
 |名字|资源|
 |-|-|
@@ -43,7 +47,7 @@ repositories {
 2./app/build.grade
 ```
 dependencies {
-	implementation 'com.github.RelinRan:CalendarView:2022.8.11.1'
+	implementation 'com.github.RelinRan:CalendarView:2022.8.29.1'
 }
 ```
 # xml
@@ -136,19 +140,30 @@ calendar.setOnItemSelectListener((calendarView, time) -> {
 ```
 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 CalendarView calendar = findViewById(R.id.calendar);
+
 //设置当前时间
 calendar.setDate(new Date())
+
 //时段选择
 calendar.setInterval(true);
+
 //设置选中区间
 calendar.setIntervalStart("2022-06-20");
 calendar.setIntervalEnd("2022-07-05");
+
 //设置可选区间（注意可用和禁用只能设置一种）
 calendar.setMinTime("2022-06-01");
 calendar.setMaxTime("2022-07-20");
+
 //设置禁用区间（注意可用和禁用只能设置一种）
 calendar.setDisableMinTime("2022-05-01");
 calendar.setDisableMaxTime("2022-05-20");
+
+//设置禁用区间数组最小（注意可用和禁用只能设置一种）
+calendar.setDisableMinTimes(new String[]{"2022-05-01","2022-05-10","2022-05-22"});
+//设置禁用区间数组最大（注意可用和禁用只能设置一种）
+calendar.setDisableMaxTimes(new String[]{"2022-05-20","2022-08-15","2022-05-26"});
+
 //选择监听
 calendar.setOnIntervalSelectListener((view, start, end) -> {
     String startTime = dateFormat.format(start);
