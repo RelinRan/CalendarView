@@ -28,7 +28,7 @@
 ![时段选择效果-circle](./ic_preview_01.png)  
 3.时段效果 - (注意：2022.3.30.1版本以前不支持) - intervalShape=“rect”  
 ![时段选择效果-rect](./ic_preview_03.png)  
-3.今日效果 - todayText=“今”  
+4.今日效果 - todayText=“今”  
 ![今日效果](./ic_preview_04.png)  
 # 资源
 |名字|资源|
@@ -71,6 +71,8 @@ dependencies {
 <attr name="isInterval" format="boolean" />
 <!--是否显示当前日期-->
 <attr name="showToday" format="boolean" />
+<!--当前日期文字-->
+<attr name="todayText" format="string|reference" />
 <!--周文字大小-->
 <attr name="weekTextSize" format="dimension|reference" />
 <!--日文字大小-->
