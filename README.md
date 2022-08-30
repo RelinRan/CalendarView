@@ -21,6 +21,7 @@
 新增设置item是否可点击方法;  
 新增设置禁用区间数组;  
 新增todayText属性设置当前日期文字；  
+新增nextMonth()和lastMonth()方法;
 # 预览
 1.单选  
 ![单选效果](./ic_preview_02.png)  
@@ -33,7 +34,7 @@
 # 资源
 |名字|资源|
 |-|-|
-|AAR|[calendar_view.aar](https://github.com/RelinRan/CalendarView/blob/master/calendar_view_2022.8.29.1.aar)|
+|AAR|[calendar_view.aar](https://github.com/RelinRan/CalendarView/blob/master/calendar_view_2022.8.30.1.aar)|
 |GitHub | [CalendarView](https://github.com/RelinRan/CalendarView)|
 |Gitee|[CalendarView](https://gitee.com/relin/CalendarView)|
 # Maven
@@ -47,7 +48,7 @@ repositories {
 2./app/build.grade
 ```
 dependencies {
-	implementation 'com.github.RelinRan:CalendarView:2022.8.29.1'
+	implementation 'com.github.RelinRan:CalendarView:2022.8.30.1'
 }
 ```
 # xml
@@ -57,6 +58,7 @@ dependencies {
     android:layout_width="match_parent"
     android:background="@android:color/white"
     app:intervalShape="rect"
+    app:todayText="今"
     android:layout_height="320dp"/>
 ```
 # attr.xml
@@ -165,6 +167,11 @@ calendar.setDisableMaxTime("2022-05-20");
 calendar.setDisableMinTimes(new String[]{"2022-05-01","2022-05-10","2022-05-22"});
 //设置禁用区间数组最大（注意可用和禁用只能设置一种）
 calendar.setDisableMaxTimes(new String[]{"2022-05-20","2022-08-15","2022-05-26"});
+
+//切换下一个月
+calendar.nextMonth();
+//切换上一个月
+calendar.lastMonth();
 
 //选择监听
 calendar.setOnIntervalSelectListener((view, start, end) -> {

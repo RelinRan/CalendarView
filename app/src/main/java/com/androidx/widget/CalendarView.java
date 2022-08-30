@@ -8,6 +8,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -221,33 +222,19 @@ public class CalendarView extends View {
                     Calendar calendar = getCalendar();
                     if (monthMode == 1 && isMoveX && !isMoveY) {
                         if (directionX == -1) {
-                            calendar.add(Calendar.MONTH, 1);
+                            nextMonth();
                         }
                         if (directionX == 1) {
-                            if (month - 2 == 0) {
-                                calendar.set(Calendar.MONTH, month - 2);
-                            } else {
-                                calendar.add(Calendar.MONTH, -1);
-                            }
+                            lastMonth();
                         }
-                        year = calendar.get(Calendar.YEAR);
-                        month = calendar.get(Calendar.MONTH) + 1;
-                        onCalendarChanged(calendar);
-                        invalidate();
                     }
                     if (monthMode == 2 && isMoveY && !isMoveX) {
                         if (directionY == -1) {
-                            if (month - 2 == 0) {
-                                calendar.set(Calendar.MONTH, month - 2);
-                            } else {
-                                calendar.add(Calendar.MONTH, -1);
-                            }
+                            lastMonth();
                         }
                         if (directionY == 1) {
-                            calendar.add(Calendar.MONTH, 1);
+                            nextMonth();
                         }
-                        year = calendar.get(Calendar.YEAR);
-                        month = calendar.get(Calendar.MONTH) + 1;
                         onCalendarChanged(calendar);
                         invalidate();
                     }
@@ -263,13 +250,38 @@ public class CalendarView extends View {
     }
 
     /**
+     * 下个月
+     */
+    public void nextMonth() {
+        Calendar calendar = getCalendar();
+        calendar.add(Calendar.MONTH, 1);
+        onCalendarChanged(calendar);
+        invalidate();
+    }
+
+    /**
+     * 上个月
+     */
+    public void lastMonth() {
+        Calendar calendar = getCalendar();
+        if (month - 2 == 0) {
+            calendar.set(Calendar.MONTH, month - 2);
+        } else {
+            calendar.add(Calendar.MONTH, -1);
+        }
+        onCalendarChanged(calendar);
+        invalidate();
+    }
+
+    /**
      * @return 当前日历时间
      */
     private Calendar getCalendar() {
         Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date());
         calendar.set(Calendar.YEAR, year);
         calendar.set(Calendar.MONTH, month - 1);
-        calendar.set(Calendar.DAY_OF_MONTH, day);
+        calendar.set(Calendar.DAY_OF_MONTH, 1);
         return calendar;
     }
 
@@ -279,6 +291,13 @@ public class CalendarView extends View {
      * @param calendar
      */
     protected void onCalendarChanged(Calendar calendar) {
+        Calendar real = Calendar.getInstance();
+        int realYear = real.get(Calendar.YEAR);
+        int realMonth = real.get(Calendar.MONTH) + 1;
+        year = calendar.get(Calendar.YEAR);
+        month = calendar.get(Calendar.MONTH) + 1;
+        boolean isRelCurrentMonth = year == realYear && month == realMonth;
+        calendar.set(Calendar.DAY_OF_MONTH, isRelCurrentMonth ? day : 1);
         if (onCalendarChangeListener != null) {
             onCalendarChangeListener.onCalendarChange(this, calendar.getTime());
         }
@@ -446,7 +465,7 @@ public class CalendarView extends View {
      * @return 是否不可选时间
      */
     private boolean isDisableArraySelect(long time) {
-        if (disableMinTimes==null||disableMaxTimes==null){
+        if (disableMinTimes == null || disableMaxTimes == null) {
             return false;
         }
         int minLength = disableMinTimes.length;
@@ -1557,6 +1576,7 @@ public class CalendarView extends View {
 
     /**
      * 设置今日文字
+     *
      * @param todayText 例如：今
      */
     public void setTodayText(String todayText) {
