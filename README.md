@@ -2,7 +2,7 @@
 自定义日历  
 1.单选  
 2.时间段选择  
-# Fix 2025.1.18.1  
+# Fix 2022.8.29.1  
 新增选中区间图形属性；  
 新增水平滑动切换上下月；  
 新增垂直滑动切换上下月；  
@@ -21,8 +21,7 @@
 新增设置item是否可点击方法;  
 新增设置禁用区间数组;  
 新增todayText属性设置当前日期文字；  
-新增nextMonth()和lastMonth()方法;   
-修复默认选择区间跨页显示bug;
+新增nextMonth()和lastMonth()方法;
 # 预览
 1.单选  
 ![单选效果](./ic_preview_02.png)  
@@ -33,11 +32,11 @@
 4.今日效果 - todayText=“今”  
 ![今日效果](./ic_preview_04.png)  
 # 资源
-|名字| 资源                                                                            |
-|-|-------------------------------------------------------------------------------|
-|AAR| [calendar_view.aar](https://github.com/RelinRan/CalendarView/blob/master/aar) |
-|GitHub | [CalendarView](https://github.com/RelinRan/CalendarView)                      |
-|Gitee| [CalendarView](https://gitee.com/relin/CalendarView)                          |
+|名字|资源|
+|-|-|
+|AAR|[calendar_view.aar](https://github.com/RelinRan/CalendarView/blob/master/calendar_view_2022.8.30.1.aar)|
+|GitHub | [CalendarView](https://github.com/RelinRan/CalendarView)|
+|Gitee|[CalendarView](https://gitee.com/relin/CalendarView)|
 # Maven
 1.build.grade | setting.grade
 ```
@@ -49,7 +48,7 @@ repositories {
 2./app/build.grade
 ```
 dependencies {
-	implementation 'com.github.RelinRan:CalendarView:2025.1.18.1'
+	implementation 'com.github.RelinRan:CalendarView:2022.8.30.1'
 }
 ```
 # xml
