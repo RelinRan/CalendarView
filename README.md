@@ -32,11 +32,11 @@
 4.今日效果 - todayText=“今”  
 ![今日效果](./ic_preview_04.png)  
 # 资源
-|名字|资源|
-|-|-|
-|AAR|[calendar_view.aar](https://github.com/RelinRan/CalendarView/blob/master/calendar_view_2022.8.30.1.aar)|
-|GitHub | [CalendarView](https://github.com/RelinRan/CalendarView)|
-|Gitee|[CalendarView](https://gitee.com/relin/CalendarView)|
+|名字| 资源                                                                            |
+|-|-------------------------------------------------------------------------------|
+|AAR| [calendar_view.aar](https://github.com/RelinRan/CalendarView/blob/master/aar) |
+|GitHub | [CalendarView](https://github.com/RelinRan/CalendarView)                      |
+|Gitee| [CalendarView](https://gitee.com/relin/CalendarView)                          |
 # Maven
 1.build.grade | setting.grade
 ```

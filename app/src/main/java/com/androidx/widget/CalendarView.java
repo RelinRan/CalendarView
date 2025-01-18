@@ -638,17 +638,27 @@ public class CalendarView extends View {
                 boolean hasInterval = startDay != null && endDay != null;
                 boolean isStart = startDay != null && dayTime == startDay.getTime();
                 boolean isEnd = endDay != null && dayTime == endDay.getTime();
-                if (startDay != null && endDay != null) {
-                    long statTime = startDay.getTime();
-                    long endTime = endDay.getTime();
-                    if (dayTime > statTime && dayTime < endTime) {
-                        if (intervalShape == SHAPE_RECT) {
-                            drawDayRect(canvas, 0, cx, cy, checkDayIntervalColor);
-                        } else {
-                            drawDayCircle(canvas, cx, cy, checkDayIntervalColor);
-                        }
-                        paint.setColor(Color.WHITE);
+                //选择日期处理
+//                if (startDay != null && endDay != null) {
+//                    long statTime = startDay.getTime();
+//                    long endTime = endDay.getTime();
+//                    if (dayTime > statTime && dayTime < endTime) {
+//                        if (intervalShape == SHAPE_RECT) {
+//                            drawDayRect(canvas, 0, cx, cy, checkDayIntervalColor);
+//                        } else {
+//                            drawDayCircle(canvas, cx, cy, checkDayIntervalColor);
+//                        }
+//                        paint.setColor(Color.WHITE);
+//                    }
+//                }
+                //日期处理
+                if (dayTime >= intervalStart && dayTime <= intervalEnd) {
+                    if (intervalShape == SHAPE_RECT) {
+                        drawDayRect(canvas, 0, cx, cy, checkDayIntervalColor);
+                    } else {
+                        drawDayCircle(canvas, cx, cy, checkDayIntervalColor);
                     }
+                    paint.setColor(Color.WHITE);
                 }
                 if (isStart) {
                     if (intervalShape == SHAPE_RECT && hasInterval) {
