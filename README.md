@@ -21,7 +21,7 @@
 新增设置item是否可点击方法;  
 新增设置禁用区间数组;  
 新增todayText属性设置当前日期文字；  
-新增nextMonth()和lastMonth()方法;
+新增nextMonth()和lastMonth()方法;   
 修复默认选择区间跨页显示bug;
 # 预览
 1.单选  
