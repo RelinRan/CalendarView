@@ -49,7 +49,7 @@ repositories {
 2./app/build.grade
 ```
 dependencies {
-	implementation 'com.github.RelinRan:CalendarView:2022.8.30.1'
+	implementation 'com.github.RelinRan:CalendarView:2025.1.18.1'
 }
 ```
 # xml
